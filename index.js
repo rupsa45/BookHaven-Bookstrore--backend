@@ -36,11 +36,13 @@ app.use("/api/users",userRouter)
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import uploadRoutes from './routes/upload.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Serve static files from the uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/images', express.static(path.join(__dirname, 'uploads')));
-import uploadRoutes from './routes/upload.routes.js'
+
+// Mount the upload routes under /api
 app.use('/api', uploadRoutes);
