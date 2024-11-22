@@ -32,7 +32,8 @@ connectDB()
 import userRouter from './routes/user.routes.js'
 app.use("/api/users",userRouter)
 
-
+import searchRoute from './routes/search.route.js'
+app.use("/api",searchRoute)
 
 import path from 'path';
 import { fileURLToPath } from 'url';

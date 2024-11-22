@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
+import Book from "../models/addBooks.model.js";
 
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -79,3 +80,36 @@ export const loginUser =async(req,res)=>{
     })
   }
 }
+
+
+
+export const searchBooks = async (req, res) => {
+  try {
+    const { title, author, category } = req.params; // Extract route parameters
+    
+
+    // Create a dynamic filter object based on provided route parameters
+    const filter = {};
+    if (title) {
+      filter.title = { $regex: title, $options: "i" }; // Case-insensitive match for title
+    }
+    if (author) {
+      filter.author = { $regex: author, $options: "i" }; // Case-insensitive match for author
+    }
+    if (category) {
+      filter.category = { $regex: category, $options: "i" }; // Case-insensitive match for category
+    }
+
+    // Fetch books based on the filter
+    const books = await Book.find(filter);
+
+    if (books.length === 0) {
+      return res.status(404).json({ message: "No books found matching your query" });
+    }
+
+    res.status(200).json(books);
+  }catch (error) {
+    console.error("Error searching for books:", error);
+    res.status(500).json({ message: "Error searching for books", error: error.message });
+  }
+};
