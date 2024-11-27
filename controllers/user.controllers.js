@@ -1,12 +1,9 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
-import jwt from "jsonwebtoken";
-import Book from "../models/addBooks.model.js";
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-};
+import Book from "../models/addBooks.model.js";
+import generateToken from "../utils/generateTokens.js";
 
 export const createUser = async (req, res) => {
   const { username, email, password } = req.body;
@@ -39,7 +36,7 @@ export const createUser = async (req, res) => {
       password: hashPassword,
     });
     const user = await newUser.save();
-    const token = createToken(user._id);
+    const token = generateToken(res, user._id);
     res.json({
       success: true,
       message: "User created successfully",
@@ -54,39 +51,45 @@ export const createUser = async (req, res) => {
   }
 };
 
-
-export const loginUser =async(req,res)=>{
-  const {email,password}=req.body;
+export const loginUser = async (req, res) => {
+  const { username, password } = req.body;
   try {
-    const user = await User.findOne({email});
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please fill in all fields" });
+    }
+    const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ success: false, message: "User not found"})
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Invalid password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid password" });
     }
-    const token = createToken(user._id);
+    const token = generateToken(res, user._id);
     res.json({
       success: true,
       message: "User logged in successfully",
-      token
-    })
+      token,
+    });
   } catch (error) {
-    console.log();
+    console.error(error);
     return res.json({
-      success:false,
-      message:"Failed to login user"
-    })
+      success: false,
+      message: "Failed to login user",
+    });
   }
-}
-
+};
 
 
 export const searchBooks = async (req, res) => {
   try {
     const { title, author, category } = req.params; // Extract route parameters
-    
 
     // Create a dynamic filter object based on provided route parameters
     const filter = {};
@@ -104,12 +107,16 @@ export const searchBooks = async (req, res) => {
     const books = await Book.find(filter);
 
     if (books.length === 0) {
-      return res.status(404).json({ message: "No books found matching your query" });
+      return res
+        .status(404)
+        .json({ message: "No books found matching your query" });
     }
 
     res.status(200).json(books);
-  }catch (error) {
+  } catch (error) {
     console.error("Error searching for books:", error);
-    res.status(500).json({ message: "Error searching for books", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error searching for books", error: error.message });
   }
 };
